@@ -16,10 +16,7 @@ import {ForumRouter} from './routes/ForumRouter.js'
 dotenv.config();
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+mongoose.connect(process.env.MONGODB_URI)
 .then(() => {
   console.log("Connected to MongoDB Atlas")
 })
@@ -28,15 +25,17 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 
 const app = express()
-const port = process.env.PORT || 30001
 
-// Updated CORS configuration for production
+// Important: Use Render's PORT environment variable
+const port = process.env.PORT || 3000;  // Changed from 30001 to 3000 as fallback
+
+// CORS configuration
 const corsOptions = {
   origin: [
     'http://localhost:8081',
     'http://192.168.1.14:8081',
     'http://192.168.1.13:30001',
-    'https://snapautism-backend.onrender.com' // Add your frontend domain when deployed
+    'https://snapautism-backend.onrender.com'
   ],
   credentials: true,
 };
@@ -59,6 +58,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy' });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`)
-})
+// Start server
+app.listen(port, '0.0.0.0', () => {  // Added '0.0.0.0' to listen on all network interfaces
+  console.log(`Server running on port ${port}`);
+});
