@@ -15,6 +15,11 @@ import {ForumRouter} from './routes/ForumRouter.js'
 
 dotenv.config();
 
+const app = express();
+
+// Remove port from .env and only use Render's PORT
+const port = process.env.PORT || 10000;
+
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI)
 .then(() => {
@@ -23,11 +28,6 @@ mongoose.connect(process.env.MONGODB_URI)
 .catch((err) => {
   console.log("MongoDB Connection Error:", err)
 });
-
-const app = express()
-
-// Important: Use Render's PORT environment variable
-const port = process.env.PORT || 3000;  // Changed from 30001 to 3000 as fallback
 
 // CORS configuration
 const corsOptions = {
@@ -41,17 +41,22 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-app.use(express.json())
-app.use(cookieParser())
+app.use(express.json());
+app.use(cookieParser());
 
-// Routes
-app.use('/auth', UserRouter)
-app.use('/children', ChildRouter)
-app.use('/test', TestRouter)
-app.use('/psychologist', PsychologistRouter)
-app.use('/consultation', ConsultationRouter)
-app.use('/chat', ChatRouter)
-app.use('/forum', ForumRouter)
+// Add a root route
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to SnapAutism API' });
+});
+
+// Your routes
+app.use('/auth', UserRouter);
+app.use('/children', ChildRouter);
+app.use('/test', TestRouter);
+app.use('/psychologist', PsychologistRouter);
+app.use('/consultation', ConsultationRouter);
+app.use('/chat', ChatRouter);
+app.use('/forum', ForumRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -59,6 +64,8 @@ app.get('/health', (req, res) => {
 });
 
 // Start server
-app.listen(port, '0.0.0.0', () => {  // Added '0.0.0.0' to listen on all network interfaces
-  console.log(`Server running on port ${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log('Server is running');
+  console.log(`Port: ${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
 });
