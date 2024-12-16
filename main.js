@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
 import express from "express";
 import cors from 'cors';
+import dotenv from 'dotenv';
 import './scheduler/deletePendingRequests.js';
+import cookieParser from "cookie-parser";
 
 import {UserRouter} from './routes/User.js'
 import {ChildRouter} from './routes/Child.js'
@@ -11,11 +13,10 @@ import {ConsultationRouter} from './routes/ConsultationCall.js'
 import {ChatRouter} from './routes/Chat.js'
 import {ForumRouter} from './routes/ForumRouter.js'
 
+dotenv.config();
 
-import cookieParser from "cookie-parser";
-
-// Use your existing MongoDB Atlas connection
-mongoose.connect("mongodb+srv://SnapAutism:abcd1234@cluster0.mtkg0.mongodb.net/SnapAutism?retryWrites=true&w=majority&appName=Cluster0", {
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
@@ -27,12 +28,16 @@ mongoose.connect("mongodb+srv://SnapAutism:abcd1234@cluster0.mtkg0.mongodb.net/S
 });
 
 const app = express()
-const port = 30001
+const port = process.env.PORT || 30001
 
-
-
+// Updated CORS configuration for production
 const corsOptions = {
-  origin: ['http://localhost:8081', 'http://192.168.1.14:8081', 'http://192.168.1.13:30001'],
+  origin: [
+    'http://localhost:8081',
+    'http://192.168.1.14:8081',
+    'http://192.168.1.13:30001',
+    'https://snapautism-backend.onrender.com' // Add your frontend domain when deployed
+  ],
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -40,41 +45,20 @@ app.use(cors(corsOptions));
 app.use(express.json())
 app.use(cookieParser())
 
+// Routes
+app.use('/auth', UserRouter)
+app.use('/children', ChildRouter)
+app.use('/test', TestRouter)
+app.use('/psychologist', PsychologistRouter)
+app.use('/consultation', ConsultationRouter)
+app.use('/chat', ChatRouter)
+app.use('/forum', ForumRouter)
 
-
-
-//App routes:
-
-//for user authentication
-app.use('/auth',UserRouter)  
-
-//for child management
-app.use('/children',ChildRouter)
-
-//for test management
-app.use('/test',TestRouter)
-
-
-
-
-//for Psychologist
-app.use('/psychologist',PsychologistRouter)
-
-
-app.use('/consultation',ConsultationRouter)
-
-
-app.use('/chat',ChatRouter)
-
-app.use('/forum',ForumRouter)
-
-
-
-//home route
-// app.use('/',HomeRouter)
-
-
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy' });
+});
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+  console.log(`Server running on port ${port}`)
 })
