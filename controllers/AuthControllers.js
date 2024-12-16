@@ -6,7 +6,6 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 dotenv.config();
 
