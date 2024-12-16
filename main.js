@@ -32,10 +32,11 @@ mongoose.connect(process.env.MONGODB_URI)
 // CORS configuration
 const corsOptions = {
   origin: [
+    'https://snapautism-backend.onrender.com',
+
     'http://localhost:8081',
     'http://192.168.1.14:8081',
     'http://192.168.1.13:30001',
-    'https://snapautism-backend.onrender.com'
   ],
   credentials: true,
 };
