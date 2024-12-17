@@ -1,75 +1,17 @@
 
-
-
 import {User} from '../models/Users.js'
 import { Message } from '../models/message.js';
 
-export const getAllUsers = async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    
-    // Find the current user to get their friends list
-    const currentUser = await User.findById(userId);
-    if (!currentUser) {
-      return res.status(404).json({ message: 'User not found' });
+export const getAllUsers =  async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const users = await User.find({_id: {$ne: userId}});
+  
+      res.json(users);
+    } catch (error) {
+      console.log('Error', error);
     }
-
-    // Find all users except:
-    // 1. The current user
-    // 2. Users who are already friends with the current user
-    const users = await User.find({
-      $and: [
-        { _id: { $ne: userId } },  // Exclude current user
-        { _id: { $nin: currentUser.friends } }  // Exclude friends
-      ]
-    }).select('username email _id');
-
-    res.json(users);
-  } catch (error) {
-    console.error('Error', error);
-    res.status(500).json({ message: 'Server error' });
   }
-}
-
-
-
-// Add this new controller to get a single user with their friends
-export const getUserWithFriends = async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    const user = await User.findById(userId)
-      .select('username email _id friends')
-      .populate('friends', 'username email _id');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    res.json(user);
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-}
-// Add this new controller function
-export const getUserById = async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    
-    // Find single user by ID
-    const user = await User.findById(userId).select('username email _id');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Return single user object instead of array
-    res.json(user);
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
 
 
   export const sendRequest =   async (req, res) => {
@@ -171,19 +113,16 @@ export const getUserById = async (req, res) => {
   }
 
 
-  export const getFriends = async(req, res) => {
-    try {
+  export const getFriends = async(req,res)=>{
+    try{
       const userId = req.params.userId;
-      const user = await User.findById(userId).populate("friends", "username email _id");
-      
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      res.json(user.friends || []);
-    } catch (error) {
-      console.error('Error fetching friends:', error);
-      res.status(500).json({ message: 'Server error' });
+      console.log(userId)
+      const users = await User.findById(userId).populate("friends","username email")
+      res.json(users.friends);
+  
+  
+    }catch(error){
+      console.log(error)
     }
   }
 
@@ -210,21 +149,18 @@ export const getUserById = async (req, res) => {
 
   export const getMessages = async (req, res) => {
     try {
-      const { senderId, receiverId } = req.query;
+      const {senderId, receiverId} = req.query;
   
       const messages = await Message.find({
         $or: [
-          { senderId: senderId, receiverId: receiverId },
-          { senderId: receiverId, receiverId: senderId },
+          {senderId: senderId, receiverId: receiverId},
+          {senderId: receiverId, receiverId: senderId},
         ],
-      })
-      .sort({ timeStamp: -1 }) // Sort by timestamp in descending order
-      .limit(20) // Limit to last 20 messages for performance
-      .populate('senderId', '_id username');
+      }).populate('senderId', '_id name');
   
-      res.status(200).json(messages.reverse()); // Reverse to get chronological order
+      res.status(200).json(messages);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.log('Error', error);
       res.status(500).json({ message: 'Error fetching messages' });
     }
-  };
+  }
