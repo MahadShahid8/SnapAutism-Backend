@@ -1,33 +1,30 @@
-import express from 'express'
+import express from 'express';
+import {
+  getAllUsers,
+  getUserWithFriends,
+  getUserById,
+  sendRequest,
+  getAllRequests,
+  acceptRequest,
+  getFriends,
+  sendMessage,
+  getMessages
+} from "../controllers/ChatController.js";
 
-import {getAllUsers,sendRequest,getAllRequests,acceptRequest,getFriends,sendMessage,getMessages} from "../controllers/ChatController.js"
 const router = express.Router();
 
+// User management routes
+router.get('/users/:userId', getAllUsers);         // Get all users except friends
+router.get('/user/:userId', getUserById);          // Get single user details
+router.get('/friends/:userId', getFriends);        // Get user's friends list
 
+// Request management routes
+router.post('/sendrequest', sendRequest);          // Send friend request
+router.get('/getrequests/:userId', getAllRequests); // Get pending requests
+router.post('/acceptrequest', acceptRequest);       // Accept friend request
 
-//for chat module user managment
-
-//to get all users
-router.get('/users/:userId', getAllUsers);
-  
-
-//to send request to users
-router.post('/sendrequest', sendRequest);
-  
-//to get all requests  
-router.get("/getrequests/:userId", getAllRequests)
-
-//to accept request
-router.post("/acceptrequest",acceptRequest)
-  
-//to get all friends
-router.get("/user/:userId",getFriends)
-  
-//to send a meesage 
+// Message management routes
 router.post('/sendMessage', sendMessage);
-
-//to get messages
 router.get('/messages', getMessages);
 
-
-  export {router as ChatRouter}
+export { router as ChatRouter };

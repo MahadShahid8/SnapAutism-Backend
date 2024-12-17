@@ -22,6 +22,7 @@ import { User } from "../models/Users.js";
   
   
   
+  
   export const createPosts= async (req, res) => {
     try {
         const { content, userId, username } = req.body;
