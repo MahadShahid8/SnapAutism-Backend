@@ -12,6 +12,8 @@ import {PsychologistRouter} from './routes/Psychologist.js'
 import {ConsultationRouter} from './routes/ConsultationCall.js'
 import {ChatRouter} from './routes/Chat.js'
 import {ForumRouter} from './routes/ForumRouter.js'
+import cookieParser from "cookie-parser";
+
 
 dotenv.config();
 

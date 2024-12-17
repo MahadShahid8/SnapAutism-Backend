@@ -15,8 +15,8 @@ const psychologistSchema = new Schema({
   experienceYears: { type: Number, min: 0 },
 
   // Availability
-  availability: [
-  ],
+  availability: [],
+
   
   isActive: { type: Boolean, default: true }, // Indicates if the psychologist is available for booking
 

@@ -1,9 +1,12 @@
 import { User } from "../models/Users.js"; // Adjust the path to your User model
+
+
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
 import crypto from 'crypto';
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+
 
 
 
@@ -33,7 +36,62 @@ export const authenticateJWT = (req, res, next) => {
 
 
 // Signup controller
- 
+export const signup = async (req, res) => {
+  try {
+    console.log("In signup controller");
+
+    const { email } = req.body;
+    console.log(email);
+
+    // Check if the user already exists
+    const userExists = await User.findOne({ email });
+
+    if (userExists) {
+      // If the user exists and the status is 'deactivated'
+      if (userExists.status === 'deactivated') {
+        return res.status(400).json({
+          status: false,
+          message: "This email is associated with a deactivated account. Use a different email to register again",
+          reactivate: true // This indicates to the front end that the user can reactivate the account
+        });
+      }
+      // If the user exists and status is 'active'
+      return res.status(400).json({ status: false, message: "User already registered" });
+    }
+
+    // Generate a random 4-digit verification code
+    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+    // Create a new user instance with the email and verification code
+    const newUser = new User({
+      email,
+      verificationCode,
+      status: 'active',  // New user is active by default
+    });
+
+    await newUser.save();
+
+    // Send verification email with the code
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Email Verification Code',
+      html: `<p>Your verification code is: <strong>${verificationCode}</strong></p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(201).json({
+      status: true,
+      message: "A verification code has been sent to your email. Please enter it to complete registration."
+    });
+
+  } catch (error) {
+    console.error("Signup Error:", error.message);
+    return res.status(500).json({ status: false, message: "An internal error occurred" });
+  }
+};
+
 
  
  
@@ -48,51 +106,9 @@ export const authenticateJWT = (req, res, next) => {
  
 
 
- export const signup = async (req, res) => {
-  try {
-    console.log("In signup controller");
-    
-    const { email } = req.body;
-    console.log(email);
-    
-    // Check if the user already exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ status: false, message: "User already registered" });
-    }
-    
-    // Generate a random 4-digit verification code
-    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
-
-    // Create a new user instance with the email and verification code
-    const newUser = new User({
-      email,
-      verificationCode,
-      
-    });
-    
-    await newUser.save();
-
-    // Send verification email with the code
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Email Verification Code',
-      html: `<p>Your verification code is: <strong>${verificationCode}</strong></p>`,
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    return res.status(201).json({ status: true, message: "A verification code has been sent to your email. Please enter it to complete registration." });
-
-  } catch (error) {
-    console.error("Signup Error:", error.message);
-    return res.status(500).json({ status: false, message: "An internal error occurred" });
-  }
-};
+ 
 
 // New endpoint for code verification
-
 export const verifyCode = async (req, res) => {
   const { username, email, password, code } = req.body;
   console.log(code);
@@ -141,30 +157,29 @@ export const login = async (req, res) => {
   console.log("in controller");
 
   try {
-    // Find the user by email
+    
     const user = await User.findOne({ email });
     
-    // If user doesn't exist, return 401
-    if (!user) {
-     
+ 
+    if (!user || user.status !== "active") {
       return res.status(400).json({ message: "User is not registered" });
     }
 
-    // Check if the password is valid
+   
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       console.log("Invalid password");
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // Generate a JWT token
+   
     const token = jwt.sign({ userid: user._id.toString() }, process.env.KEY, {
       expiresIn: "1h",
     });
 
-    // Return token and user details in the response
-    console.log("Login successful,a generating token...");
-    console.log(user)
+
+    console.log("Login successful, generating token...");
+    console.log(user);
     return res.status(200).json({
       status: true,
       message: "Login successful",
@@ -173,14 +188,15 @@ export const login = async (req, res) => {
     });
 
   } catch (error) {
-    // Handle any errors that occurred during login
+    
     console.error("Error logging in:", error);
     return res.status(500).json({ message: "An error occurred during login" });
   }
 };
 
 
-// Get user profile controller
+
+
 export const profile = async (req, res) => {
   try {
     const user = await User.findById(req.user.userid);
@@ -193,7 +209,7 @@ export const profile = async (req, res) => {
   }
 };
 
-//logout Controller
+
 export const logout = async (req, res) => {
   try {
     return res.status(200).json({ message: "Logged out successfully" });
@@ -293,4 +309,41 @@ catch(error)
   console.log(error);
   return res.status(500).send({success:false,message:"an error occured"})
 }
+};
+
+
+
+
+
+export const deleteAccount = async (req, res) => {
+  const { myuserId } = req.params;
+  console.log(myuserId)
+
+  try {
+    // Find the user by userId and update the status to "deactivated"
+    const user = await User.findById(myuserId);
+
+    if (!user) {
+      return res.status(404).json({ // HTTP Status 404 - Not Found
+        message: "User not found",
+      });
+    }
+
+    // Update the user's status to "deactivated"
+    user.status = "deactivated";
+    await user.save(); // Save the changes to the database
+
+    return res.status(200).json({ // HTTP Status 200 - OK
+      message: "Account deactivated successfully",
+      user: {
+        id: user._id,
+        status: user.status,
+      },
+    });
+  } catch (error) {
+    console.error("Error deactivating account:", error);
+    return res.status(500).json({ // HTTP Status 500 - Internal Server Error
+      message: "Something went wrong. Please try again later.",
+    });
+  }
 };

@@ -1,5 +1,3 @@
-
-
 // User Schema
 import mongoose from "mongoose";
 const { Schema, model, Types } = mongoose; 
@@ -16,6 +14,12 @@ const UserSchema = new Schema({
 
   consultations: [{type: mongoose.Schema.Types.ObjectId, ref: 'Consultation',  },],
   verificationCode:{ type: String, required: false },
+
+  status: {
+    type: String,
+    enum: ['active', 'deactivated'], 
+    default: 'active', 
+  },
 
 
   //for chat 

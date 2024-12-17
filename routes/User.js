@@ -14,7 +14,7 @@ const router = express.Router();
 
 
 //controller imports
-import  {signup,login,forgotPassword,resetPassword,profile,logout,verifyCode} from '../controllers/AuthControllers.js'; // Controller functions
+import  {signup,login,forgotPassword,resetPassword,profile,logout,verifyCode,deleteAccount} from '../controllers/AuthControllers.js'; // Controller functions
 import {userTestHistory} from '../controllers/TestController.js'
 
 
@@ -50,6 +50,8 @@ router.post('/resetPassword', resetPassword)
 router.get('/profile', authenticateJWT, profile);
 
 router.get('/:userId/test-history',userTestHistory)
+router.put('/:myuserId/deleteAccount', deleteAccount)
+
 
 
 
