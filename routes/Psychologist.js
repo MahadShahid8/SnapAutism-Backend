@@ -7,7 +7,7 @@ const router = express.Router();
 
 
 //controller imports
-import  {signup,login,forgotPassword,resetPassword,profile,logout,viewCallRequests,confirmConsultationRequest,viewPsychologistProfile,setPsychologistProfile,updateAvailability,verifyCode} from '../controllers/PsychologistControllers.js'; // Controller functions
+import  {signup,login,forgotPassword,resetPassword,profile,logout,viewCallRequests,confirmConsultationRequest,viewPsychologistProfile,setPsychologistProfile,updateAvailability,verifyCode,ReportConsultations} from '../controllers/PsychologistControllers.js'; // Controller functions
 
 
 
@@ -52,6 +52,8 @@ router.patch('/:psychologistId/updateAvailability', updateAvailability);
 
 //for consultation
 router.get('/:psychologistId/AllConsultations',viewCallRequests)
+router.get('/:psychologistId/ReportConsultations',ReportConsultations)
+
 router.post('/:consultationId/confirmConsultationRequest',confirmConsultationRequest)
 
 

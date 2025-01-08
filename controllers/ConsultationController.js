@@ -1,7 +1,6 @@
-// requestConsultationCall,PaymentProofUpload
-import { Consultation } from "../models/ConsultationCall.js"; // Import Consultation model
-import {Psychologist} from "../models/Psychologist.js"; // Import Psychologist model
-import {User} from "../models/Users.js"; // Import User model (if needed for validation)
+import { Consultation } from "../models/ConsultationCall.js"; 
+import {Psychologist} from "../models/Psychologist.js";
+import {User} from "../models/Users.js"; 
 
 
 
@@ -13,18 +12,19 @@ export const requestConsultation = async (req, res) => {
   console.log(timeSlot)
 
   try {
-    // Validate input
+   
     if (!userId  || !timeSlot || !timeSlot.startTime || !timeSlot.endTime) {
       return res.status(400).json({ message: 'User ID, selected date, and time slot are required.' });
     }
 
-    // Check if the psychologist exists
+    
     const psychologist = await Psychologist.findById(psychologistId);
+    const user = await User.findById(userId);
     if (!psychologist) {
       return res.status(404).json({ message: 'Psychologist not found.' });
     }
 
-    // Create a new consultation object
+  
     const consultation = new Consultation({
       userId,
       psychologistId,
@@ -32,14 +32,14 @@ export const requestConsultation = async (req, res) => {
       timeSlot,
     });
 
-    // Save the consultation to the database
     await consultation.save();
 
-    // Update the psychologist's consultations array
     psychologist.consultations.push(consultation._id);
-    await psychologist.save(); // Save the updated psychologist document
+    await psychologist.save(); 
 
-    // Return the created consultation object
+    user.consultations.push(consultation._id);
+    await user.save();
+
     return res.status(201).json(consultation);
   } catch (error) {
     console.error('Error requesting consultation:', error);
@@ -47,36 +47,48 @@ export const requestConsultation = async (req, res) => {
   }
 };
 
-  export const viewConsultationRequests = async (req, res) => {
-    try {
-      
-      const { userId } = req.params; // Get the user ID from the request parameters
-  
-      // Validate if the user exists
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ status: false, message: 'User not found' });
-      }
-  
-      // Find all consultations associated with the user
-      const consultations = await Consultation.find({ userId: user._id }).populate('psychologistId');
-      console.log(consultations)
-      // Check if there are any consultations
-      if (consultations.length === 0) {
-        return res.status(404).json({ status: false, message: 'No consultation requests found for this user' });
-      }
-  
-      // Return the consultation requests with user data
-      return res.status(200).json({
-        status: true,
-        message: "Consultation requests retrieved successfully",
-        consultations,
-      });
-    } catch (error) {
-      console.error("Error retrieving consultation requests:", error);
-      return res.status(500).json({ status: false, message: "Server error" });
+export const viewConsultationRequests = async (req, res) => {
+  try {
+    const { userId } = req.params; 
+
+   
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: false, message: 'User not found' });
     }
-  };
+    
+    
+    if (!user.consultations || user.consultations.length === 0) {
+      return res.status(400).json({
+        status: false,
+        message: 'No consultation references found for this user',
+      });
+    }
+
+    
+    const consultations = await Consultation.find({
+      _id: { $in: user.consultations }, 
+    }).populate('psychologistId'); 
+
+    if (consultations.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: 'No consultation requests found for this user',
+      });
+    }
+
+ 
+    return res.status(200).json({
+      status: true,
+      message: 'Consultation requests retrieved successfully',
+      consultations,
+    });
+  } catch (error) {
+    console.error('Error retrieving consultation requests:', error);
+    return res.status(500).json({ status: false, message: 'Server error' });
+  }
+};
+
 
 
   export const getAllPsychologists = async (req, res) => {
@@ -115,7 +127,7 @@ export const requestConsultation = async (req, res) => {
 
 
 
-// Controller function to update the rating for a consultation
+
 export const submitConsultationRating = async (req, res) => {
   const { consultationId } = req.params; // Get consultation ID from URL parameters
   const { rating, feedback } = req.body; // Get the new rating and feedback from the request body

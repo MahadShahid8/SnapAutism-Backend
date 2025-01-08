@@ -45,6 +45,38 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(cookieParser());
+import  schedule from 'node-schedule';
+import  {User} from './models/Users.js'; 
+import  {Psychologist} from './models/Psychologist.js';
+
+// Schedule the task for every day at 12 AM
+//clearing all user consultations
+schedule.scheduleJob('0 0 * * *', async () => {
+  try {
+    console.log("Running the daily task to clear consultations and update availability...");
+
+    
+    await User.updateMany({}, { $set: { consultations: [] } });
+    console.log("Cleared consultations for all users.");
+
+    
+    await Psychologist.updateMany({}, { $set: { consultations: [] } });
+    console.log("Cleared consultations for all psychologists.");
+
+    
+    await Psychologist.updateMany(
+      {},
+      {
+        $set: { "availability.$[].booked": false }, 
+      }
+    );
+    console.log("Updated availability for all psychologists, setting 'booked' to false.");
+
+    console.log("Daily task completed successfully.");
+  } catch (error) {
+    console.error("Error during the daily task:", error);
+  }
+});
 
 // Add a root route
 app.get('/', (req, res) => {

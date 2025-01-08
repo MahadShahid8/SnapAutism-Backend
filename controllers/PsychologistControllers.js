@@ -282,28 +282,68 @@ export const resetPassword = async (req, res) => {
 
 
 //view all consultations requests
-export const viewCallRequests=async(req,res)=> {
-    try {
-      
-        const psychologistId = req.params.psychologistId;
-  
-      // Find the psychologist by their ID
-      const psychologist = await Psychologist.findById(psychologistId).populate('consultations');
-  
-      if (!psychologist) {
-        return res.status(404).json({ message: 'Psychologist not found' });
-      }
-  
-      // Get all consultations associated with the psychologist
-      const consultations = await Consultation.find({ psychologistId: psychologist._id });
-  
-      // Return the consultations
-      return res.status(200).json(consultations);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Server error' });
+export const viewCallRequests = async (req, res) => {
+  try {
+    const psychologistId = req.params.psychologistId;
+
+    
+    const psychologist = await Psychologist.findById(psychologistId);
+
+    if (!psychologist) {
+      return res.status(404).json({ message: 'Psychologist not found' });
     }
+
+    
+    if (!psychologist.consultations || psychologist.consultations.length === 0) {
+      return res.status(400).json({ message: 'No consultations found for this psychologist' });
+    }
+
+    // Find the consultations that are referenced in the 'consultations' array of the psychologist
+    const consultations = await Consultation.find({
+      _id: { $in: psychologist.consultations }
+    });
+
+    // Return the consultations
+    return res.status(200).json({
+      message: "Consultation requests retrieved successfully",
+      consultations
+    });
+  } catch (error) {
+    console.error("Error retrieving consultation requests:", error);
+    return res.status(500).json({ message: 'Server error' });
   }
+};
+
+export const ReportConsultations = async (req, res) => {
+  try {
+    const psychologistId = req.params.psychologistId;
+
+    // Validate if the psychologist exists
+    const psychologistExists = await Psychologist.exists({ _id: psychologistId });
+    if (!psychologistExists) {
+      return res.status(404).json({ message: 'Psychologist not found' });
+    }
+
+    // Fetch all consultations where the psychologistId matches
+    const consultations = await Consultation.find({ psychologistId });
+
+    // If no consultations are found
+    if (consultations.length === 0) {
+      return res.status(404).json({ message: 'No consultations found for this psychologist' });
+    }
+
+    // Return the consultations
+    return res.status(200).json({
+      status: true,
+      message: 'Consultations fetched successfully',
+      consultations,
+    });
+  } catch (error) {
+    console.error("Error fetching consultations:", error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 
 
   export const confirmConsultationRequest = async (req, res) => {
@@ -341,7 +381,7 @@ export const viewCallRequests=async(req,res)=> {
     try {
       // Fetch the psychologist's details from the database
       const psychologist = await Psychologist.findById(psychologistId).select(
-        '_id username qualifications specialization bio experienceYears availability'
+        '_id username qualifications specialization bio experienceYears availability bookingLimit'
       );
   
       if (!psychologist) {
@@ -369,26 +409,26 @@ export const viewCallRequests=async(req,res)=> {
     try {
         let bookingLimit = null;
 
-        // Calculate booking limit if availability exists and has at least one entry
+       
         if (availability && availability.length > 0) {
           const firstAvailability = availability[0];
-          const startTimeStr = firstAvailability.startTime; // e.g., "09:30 AM"
+          const startTimeStr = firstAvailability.startTime; 
           console.log("my start time:", startTimeStr);
       
-          // Ensure startTimeStr is defined and in the correct format
+         
           if (typeof startTimeStr === 'string') {
-              // Split the time string into time and modifier
+              
               const [time, modifier] = startTimeStr.split(' ');
               let [hours, minutes] = time.split(':').map(Number);
       
               console.log("time:", time);
       
-              // Adjust hours based on AM/PM
+              
               if (modifier.toLowerCase() === 'pm' && hours < 12) {
-                  hours += 12; // Convert PM hour to 24-hour format
+                  hours += 12; 
               }
               if (modifier.toLowerCase() === 'am' && hours === 12) {
-                  hours = 0; // Convert 12 AM to 0 hours
+                  hours = 0; 
               }
       
               console.log("modifier:", modifier);
@@ -396,13 +436,12 @@ export const viewCallRequests=async(req,res)=> {
       
               const today = new Date();
               const startTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
-              console.log("Start time:", startTime.toString()); // Display local time
+              console.log("Start time:", startTime.toString()); 
       
-              // Calculate booking time limit by subtracting 4 hours
+             
               bookingLimit = new Date(startTime.getTime() - 4 * 60 * 60 * 1000);
-              console.log("Booking Limit:", bookingLimit.toString()); // Display booking limit in local time
+              console.log("Booking Limit:", bookingLimit.toString()); 
       
-              // If you need to set the bookingLimit to the DB, you can do it here
           } else {
               console.error("Invalid start time format:", startTimeStr);
           }
@@ -411,27 +450,27 @@ export const viewCallRequests=async(req,res)=> {
       }
       
 
-        // Update the psychologist's profile in the database, including bookingLimit if it was calculated
+        
         const updatedPsychologist = await Psychologist.findByIdAndUpdate(
             psychologistId,
             {
                 specialization,
                 bio,
                 experienceYears,
-                availability, // Add the availability data
-                ...(bookingLimit && { bookingLimit }), // Add bookingLimit only if it was calculated
+                availability, 
+                ...(bookingLimit && { bookingLimit }), 
                 isActive
             },
-            { new: true } // Return the updated document
+            { new: true } 
         );
 
-        // If the psychologist is not found
+     
         if (!updatedPsychologist) {
             return res.status(404).json({ message: 'Psychologist not found' });
         }
 
         console.log(updatedPsychologist);
-        // Send back the updated psychologist data, including availability
+  
         return res.status(200).json(updatedPsychologist);
     } catch (error) {
         console.error('Error updating psychologist profile:', error);
@@ -473,6 +512,3 @@ export const updateAvailability = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
-
-
-

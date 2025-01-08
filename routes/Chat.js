@@ -1,6 +1,6 @@
 import express from 'express'
 
-import {getAllUsers,sendRequest,getAllRequests,acceptRequest,getFriends,sendMessage,getMessages} from "../controllers/ChatController.js"
+import {getAllUsers,sendRequest,getAllRequests,acceptRequest,getFriends,sendMessage,getMessages,cancelRequest} from "../controllers/ChatController.js"
 const router = express.Router();
 
 
@@ -19,6 +19,8 @@ router.get("/getrequests/:userId", getAllRequests)
 
 //to accept request
 router.post("/acceptrequest",acceptRequest)
+
+router.post("/cancelrequest",cancelRequest)
   
 //to get all friends
 router.get("/user/:userId",getFriends)
